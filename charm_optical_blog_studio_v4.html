@@ -1,0 +1,632 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080b12;--panel:#0d1117;--surface:#131920;--border:#1d2635;--border-hi:#2a3a52;
+  --text:#d4e0f0;--muted:#4a6080;--dim:#1a2535;
+  --accent:#00e5a0;--accent-dim:rgba(0,229,160,.1);
+  --amber:#ffb347;--amber-dim:rgba(255,179,71,.1);
+  --blue:#4d9fff;--blue-dim:rgba(77,159,255,.1);
+  --pink:#ff6b9d;--pink-dim:rgba(255,107,157,.1);
+  --red:#ff5757;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:2px}
+
+.hdr{display:flex;align-items:center;gap:12px;padding:13px 22px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.hdr-logo{font-family:'DM Serif Display',serif;font-size:18px;color:var(--accent)}
+.hdr-sub{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:1px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:blink 2s infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hdr-badge{margin-left:auto;font-family:'Space Mono',monospace;font-size:10px;padding:4px 10px;border-radius:3px;background:var(--accent-dim);border:1px solid rgba(0,229,160,.3);color:var(--accent)}
+
+.layout{display:grid;grid-template-columns:240px 1fr;max-width:1080px;margin:0 auto;min-height:calc(100vh - 51px)}
+
+.sidebar{background:var(--panel);border-right:1px solid var(--border);padding:15px 12px;display:flex;flex-direction:column;gap:13px;position:sticky;top:51px;height:calc(100vh - 51px);overflow-y:auto}
+.sb-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:7px}
+
+.cat-btn{width:100%;padding:10px 11px;background:var(--surface);border:1px solid var(--border);border-radius:7px;cursor:pointer;text-align:left;transition:all .15s;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.cat-btn:hover{border-color:var(--border-hi)}
+.cat-btn.sel-frames{border-color:var(--blue);background:var(--blue-dim)}
+.cat-btn.sel-health{border-color:var(--accent);background:var(--accent-dim)}
+.cat-btn.sel-insurance{border-color:var(--amber);background:var(--amber-dim)}
+.cat-btn.sel-kids{border-color:var(--pink);background:var(--pink-dim)}
+.cat-icon{font-size:17px;flex-shrink:0}
+.cat-name{font-size:12px;font-weight:600;color:var(--text)}
+.cat-desc{font-size:11px;color:var(--muted);margin-top:1px}
+
+.res-btn{width:100%;padding:11px;background:var(--accent);border:none;border-radius:7px;cursor:pointer;color:#080b12;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s;letter-spacing:.01em}
+.res-btn:hover:not(:disabled){background:#00ffc3;transform:translateY(-1px)}
+.res-btn:disabled{background:var(--dim);color:var(--muted);cursor:default;transform:none}
+
+.log-section{display:none}
+.log-box{background:#060a0f;border:1px solid var(--border);border-radius:7px;padding:9px;max-height:150px;overflow-y:auto;margin-top:5px}
+.log-line{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);padding:2px 0;line-height:1.5}
+.log-line.ok{color:var(--accent)}.log-line.warn{color:var(--amber)}.log-line.err{color:var(--red)}
+
+.stats-section{display:none}
+.stats-box{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:10px;margin-top:5px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)}
+.stat-row:last-child{border-bottom:none}
+.stat-k{color:var(--muted);font-family:'Space Mono',monospace;font-size:10px}
+.stat-v{color:var(--text);font-weight:600;font-size:12px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.main{padding:22px 26px;overflow-y:auto;min-width:0}
+
+/* States */
+.center-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:360px;gap:12px;text-align:center;max-width:460px;margin:0 auto}
+.big-icon{font-size:48px;filter:drop-shadow(0 0 22px rgba(0,229,160,.35))}
+.big-title{font-family:'DM Serif Display',serif;font-size:22px}
+.big-sub{font-size:13px;color:var(--muted);line-height:1.7}
+.steps{display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:0;margin-top:4px}
+.step{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.snum{width:20px;height:20px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:10px}
+.sarr{color:var(--dim);margin:0 6px}
+
+.spinner{width:44px;height:44px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-logs{width:100%;max-width:380px}
+.ll{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);padding:4px 0}
+.ll.ok{color:var(--accent)}
+
+/* ERROR state in main panel */
+.err-state{background:rgba(255,87,87,.06);border:1px solid rgba(255,87,87,.25);border-radius:10px;padding:22px;max-width:520px}
+.err-title{font-size:15px;font-weight:700;color:var(--red);margin-bottom:8px}
+.err-msg{font-family:'Space Mono',monospace;font-size:11px;color:rgba(255,87,87,.8);line-height:1.6;margin-bottom:14px;word-break:break-all}
+.err-hint{font-size:12px;color:var(--muted);line-height:1.6}
+.retry-btn{margin-top:14px;padding:9px 18px;background:var(--red);border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
+
+/* Topics */
+.sec-hdr{margin-bottom:14px}
+.sec-title{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:3px}
+.sec-sub{font-size:12px;color:var(--muted)}
+.topics-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.tc{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:15px;cursor:pointer;transition:all .15s;text-align:left;width:100%}
+.tc:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,229,160,.07)}
+.tc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.badge{font-family:'Space Mono',monospace;font-size:9px;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.06em}
+.b-n{background:var(--surface);border:1px solid var(--border);color:var(--muted)}
+.b-low{background:var(--accent-dim);border:1px solid rgba(0,229,160,.3);color:var(--accent)}
+.b-medium{background:var(--amber-dim);border:1px solid rgba(255,179,71,.3);color:var(--amber)}
+.b-high{background:rgba(255,87,87,.1);border:1px solid rgba(255,87,87,.3);color:var(--red)}
+.tc-title{font-size:13px;font-weight:600;color:var(--text);line-height:1.4;margin-bottom:6px}
+.tc-angle{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px}
+.tc-reddit{background:#060a0f;border:1px solid var(--border);border-radius:5px;padding:7px 9px;margin-bottom:7px}
+.rl{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.rt{font-size:11px;color:#9ab0ca;line-height:1.5}
+.tc-kws{display:flex;flex-wrap:wrap;gap:3px}
+.kw{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);background:var(--panel);border:1px solid var(--border);padding:2px 6px;border-radius:3px}
+
+/* Blog view */
+.btabs{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:3px;width:fit-content;margin-bottom:18px}
+.btab{padding:6px 13px;border-radius:5px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .12s}
+.btab.active{background:var(--accent);color:#080b12}
+
+.article{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:26px;max-width:640px}
+.art-url{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:11px;display:flex;align-items:center;gap:5px}
+.udot{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.art-h1{font-family:'DM Serif Display',serif;font-size:23px;line-height:1.25;color:#f0f6ff;margin-bottom:15px}
+.byline{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:18px}
+.by-av{width:33px;height:33px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--blue));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#080b12;flex-shrink:0}
+.by-name{font-size:12px;font-weight:600;color:var(--text)}
+.by-role{font-size:11px;color:var(--muted)}
+.by-meta{margin-left:auto;text-align:right}
+.by-mv{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted)}
+.art-body h2{font-family:'DM Serif Display',serif;font-size:19px;color:#e8f0ff;margin:20px 0 8px}
+.art-body h3{font-size:14px;font-weight:600;color:var(--text);margin:15px 0 6px}
+.art-body p{color:#8aa0c0;margin-bottom:11px;font-size:14px;line-height:1.75}
+.art-body ul,.art-body ol{padding-left:17px;margin-bottom:11px}
+.art-body li{color:#8aa0c0;margin-bottom:5px;font-size:14px}
+.art-body a{color:var(--blue)}
+.chart-block{background:#060a0f;border:1px solid var(--border);border-radius:9px;padding:15px;margin:15px 0}
+.chart-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px}
+.chart-bars{display:flex;flex-direction:column;gap:7px}
+.cbar-row{display:flex;align-items:center;gap:8px}
+.cbar-lbl{font-size:11px;color:var(--muted);width:100px;flex-shrink:0;text-align:right}
+.cbar-track{flex:1;background:var(--border);border-radius:3px;height:20px;overflow:hidden}
+.cbar-fill{height:100%;border-radius:3px;display:flex;align-items:center;padding-left:6px}
+.cbar-val{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:#080b12}
+.chart-src{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);margin-top:8px}
+.faq-block{background:#060a0f;border:1px solid var(--border);border-radius:9px;padding:15px;margin-top:20px}
+.faq-h{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text);margin-bottom:11px}
+.faq-item{padding:9px 0;border-bottom:1px solid var(--border)}
+.faq-item:last-child{border-bottom:none}
+.faq-q{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px}
+.faq-a{font-size:12px;color:var(--muted);line-height:1.6}
+
+.meta-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:15px;margin-bottom:11px;max-width:600px}
+.mc-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.mc-lbl{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.mc-val{background:#060a0f;border:1px solid var(--border);border-radius:5px;padding:10px;font-size:13px;color:var(--text);line-height:1.5}
+.copy-btn{font-size:11px;font-weight:600;padding:3px 10px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .12s}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent)}
+.copy-btn.copied{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+.mlimit{font-family:'Space Mono',monospace;font-size:10px}
+
+.schema-block{background:#060a0f;border:1px solid var(--border);border-radius:9px;overflow:hidden;max-width:600px;margin-bottom:11px}
+.schema-hdr{display:flex;justify-content:space-between;align-items:center;padding:9px 13px;border-bottom:1px solid var(--border);background:var(--surface)}
+.schema-lbl{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted)}
+.schema-pre{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);padding:12px;overflow-x:auto;line-height:1.6;white-space:pre;max-height:320px;overflow-y:auto}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="dot"></div>
+  <div><div class="hdr-logo">Charm Optical · Blog Studio</div><div class="hdr-sub">research agents → SEO content → charmoptical.ca</div></div>
+  <div id="hdrBadge" class="hdr-badge" style="display:none"></div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div>
+      <div class="sb-label">Category</div>
+      <button class="cat-btn" id="cb-frames"><span class="cat-icon">👓</span><div><div class="cat-name">Frames & Eyewear</div><div class="cat-desc">Styles, lens tech, trends</div></div></button>
+      <button class="cat-btn" id="cb-health"><span class="cat-icon">👁️</span><div><div class="cat-name">Eye Health</div><div class="cat-desc">Conditions, prevention, care</div></div></button>
+      <button class="cat-btn" id="cb-insurance"><span class="cat-icon">🛡️</span><div><div class="cat-name">Insurance & Benefits</div><div class="cat-desc">Coverage, claims, savings</div></div></button>
+      <button class="cat-btn" id="cb-kids"><span class="cat-icon">👨‍👩‍👧</span><div><div class="cat-name">Kids & Family</div><div class="cat-desc">Myopia, screen time, exams</div></div></button>
+    </div>
+    <button class="res-btn" id="resBtn" disabled>🔬 Research & Find Topics</button>
+    <div class="log-section" id="logSection">
+      <div class="sb-label">Agent Log</div>
+      <div class="log-box" id="logBox"></div>
+    </div>
+    <div class="stats-section" id="statsSection">
+      <div class="sb-label">Post Stats</div>
+      <div class="stats-box" id="statsBox"></div>
+    </div>
+  </div>
+
+  <div class="main" id="mainPanel"></div>
+</div>
+
+<script>
+const CATS = {
+  frames:    {label:'Frames & Eyewear',    icon:'👓', link:'https://charmoptical.ca/collections/eyeglasses'},
+  health:    {label:'Eye Health',           icon:'👁️',  link:'https://charmoptical.ca/pages/services'},
+  insurance: {label:'Insurance & Benefits', icon:'🛡️',  link:'https://charmoptical.ca/pages/providers'},
+  kids:      {label:'Kids & Family',        icon:'👨‍👩‍👧', link:'https://charmoptical.ca/collections'}
+};
+const COLORS = ['#00e5a0','#4d9fff','#ffb347','#ff6b9d','#a78bfa','#34d399'];
+let selCat = null, blogData = null, activeTab = 'preview', topics = [];
+
+// Wire up buttons after DOM ready
+document.querySelectorAll('.cat-btn').forEach(btn => {
+  const id = btn.id.replace('cb-','');
+  btn.addEventListener('click', () => selectCat(id));
+});
+document.getElementById('resBtn').addEventListener('click', runResearch);
+
+showIdle();
+
+function selectCat(id) {
+  selCat = id;
+  document.querySelectorAll('.cat-btn').forEach(b => b.className = 'cat-btn');
+  document.getElementById('cb-'+id).className = 'cat-btn sel-'+id;
+  document.getElementById('resBtn').disabled = false;
+  document.getElementById('logBox').innerHTML = '';
+  document.getElementById('logSection').style.display = 'none';
+  document.getElementById('statsSection').style.display = 'none';
+  document.getElementById('hdrBadge').style.display = 'none';
+  blogData = null;
+  showIdle();
+}
+
+function slog(msg, type='') {
+  const box = document.getElementById('logBox');
+  document.getElementById('logSection').style.display = 'block';
+  const el = document.createElement('div');
+  el.className = 'log-line' + (type ? ' '+type : '');
+  el.textContent = '> ' + msg;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+  console.log('[BlogStudio]', msg);
+}
+
+function showIdle() {
+  document.getElementById('mainPanel').innerHTML = `
+    <div class="center-state">
+      <div class="big-icon">🔬</div>
+      <div class="big-title">Pick a category, then research.</div>
+      <div class="big-sub">Live AI research finds trending 2026 topics with Reddit insight, then writes a full SEO blog post for charmoptical.ca.</div>
+      <div class="steps">
+        <div class="step"><div class="snum">1</div><span>Pick category</span></div><div class="sarr">→</div>
+        <div class="step"><div class="snum">2</div><span>Research</span></div><div class="sarr">→</div>
+        <div class="step"><div class="snum">3</div><span>Pick topic</span></div><div class="sarr">→</div>
+        <div class="step"><div class="snum">4</div><span>Blog ready</span></div>
+      </div>
+    </div>`;
+}
+
+function showLoadingMain(title, lines=[]) {
+  const lhtml = lines.map(l=>`<div class="ll">${l}</div>`).join('');
+  document.getElementById('mainPanel').innerHTML = `
+    <div class="center-state">
+      <div class="spinner"></div>
+      <div class="big-title">${title}</div>
+      <div class="loading-logs" id="loadLogs">${lhtml}</div>
+    </div>`;
+}
+
+function addMainLog(msg, type='') {
+  const el = document.getElementById('loadLogs');
+  if (!el) return;
+  const d = document.createElement('div');
+  d.className = 'll' + (type ? ' '+type : '');
+  d.textContent = '→ ' + msg;
+  el.appendChild(d);
+}
+
+function showError(title, msg, onRetry) {
+  document.getElementById('mainPanel').innerHTML = `
+    <div class="center-state" style="align-items:flex-start;text-align:left">
+      <div class="err-state">
+        <div class="err-title">⚠️ ${title}</div>
+        <div class="err-msg">${msg}</div>
+        <div class="err-hint">Make sure you're logged into claude.ai and try again. The API proxy only works inside Claude artifacts.</div>
+        <button class="retry-btn" id="retryBtn">↺ Try Again</button>
+      </div>
+    </div>`;
+  document.getElementById('retryBtn').addEventListener('click', onRetry);
+}
+
+async function callClaude(prompt) {
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 1000,
+      messages: [{role:'user', content: prompt}]
+    })
+  });
+
+  if (!resp.ok) {
+    const errBody = await resp.text();
+    throw new Error(`API ${resp.status}: ${errBody.slice(0,200)}`);
+  }
+
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+  if (!data.content || !data.content.length) throw new Error('Empty response from API');
+
+  return data.content.filter(b => b.type === 'text').map(b => b.text).join('');
+}
+
+function parseJSON(text) {
+  const clean = text.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
+  const m = clean.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
+  if (m) return JSON.parse(m[0]);
+  return JSON.parse(clean);
+}
+
+async function runResearch() {
+  if (!selCat) return;
+  const cat = CATS[selCat];
+  topics = [];
+  document.getElementById('resBtn').disabled = true;
+  document.getElementById('resBtn').textContent = '⏳ Researching...';
+  document.getElementById('logBox').innerHTML = '';
+  document.getElementById('logSection').style.display = 'none';
+  document.getElementById('statsSection').style.display = 'none';
+  document.getElementById('hdrBadge').style.display = 'none';
+
+  showLoadingMain('Finding trending topics...', ['Researching '+cat.label+' for 2026...','Scanning Reddit + optometry trends...']);
+  slog('Agent started: '+cat.label);
+
+  try {
+    const raw = await callClaude(
+      `You are an SEO content strategist for Charm Optical, an optical store in Edmonton AB Canada (charmoptical.ca).
+
+Generate 4 trending blog topic ideas for the content category: "${cat.label}"
+
+Context: Canadian eye care, Alberta market, post-January 2026 trends, targeting local Edmonton patients.
+
+Think about:
+- What Canadians are searching for in this category right now in 2026
+- Topics discussed heavily on Reddit (r/optometry, r/eyecare, r/canada, r/alberta)
+- Content that appears in Google's AI Overviews and People Also Ask
+- Mix of evergreen + timely angles
+
+Return ONLY a raw JSON array (no markdown, no backticks, no explanation):
+[{"title":"SEO blog title under 65 chars","angle":"Why this is timely and useful in 2026, 1-2 sentences","keywords":["primary kw","secondary kw","edmonton kw"],"difficulty":"low","redditInsight":"What Reddit users are discussing about this right now, 1-2 sentences"}]
+
+Return exactly 4 objects. Vary difficulty: low/medium/high.`
+    );
+
+    slog('API response received','ok');
+    console.log('[Raw topics]', raw);
+
+    let parsed;
+    try {
+      parsed = parseJSON(raw);
+      if (!Array.isArray(parsed)) parsed = [parsed];
+    } catch(e) {
+      console.warn('JSON parse failed, using fallback', e);
+      slog('Using built-in topic list','warn');
+      parsed = getFallback(selCat);
+    }
+
+    topics = parsed.slice(0, 4);
+    slog(topics.length + ' topics ready','ok');
+    addMainLog('Topics found!', 'ok');
+
+    document.getElementById('resBtn').disabled = false;
+    document.getElementById('resBtn').textContent = '🔬 Research Again';
+    showTopics(topics);
+
+  } catch(err) {
+    console.error('[Research error]', err);
+    slog('Error: '+err.message, 'err');
+    document.getElementById('resBtn').disabled = false;
+    document.getElementById('resBtn').textContent = '🔬 Retry Research';
+    showError('Research Failed', err.message, runResearch);
+  }
+}
+
+function getFallback(cat) {
+  const f = {
+    frames:[
+      {title:'Best Eyeglass Frames in Edmonton 2026',angle:'Trending styles local Edmontonians are buying right now.',keywords:['eyeglasses edmonton','frames 2026','optical store edmonton'],difficulty:'low',redditInsight:'Reddit users asking where to find affordable trendy frames in Edmonton and Calgary.'},
+      {title:'Anti-Fatigue Lenses: Worth It for Edmonton Office Workers?',angle:'WFH screen time debate heating up on r/optometry in 2026.',keywords:['anti-fatigue lenses','computer glasses','lens technology'],difficulty:'medium',redditInsight:'Lots of office workers on Reddit asking if anti-fatigue lenses actually reduce eye strain.'},
+      {title:'How to Choose Frames for Your Face Shape',angle:'Evergreen guide driving consistent search traffic year-round.',keywords:['frames for face shape','eyeglasses style guide','optical edmonton'],difficulty:'low',redditInsight:'r/malefashionadvice and r/femalefashionadvice constantly have glasses shape questions.'},
+      {title:'Titanium vs Acetate Frames: Which Lasts Longer?',angle:'Material comparison buyers always search before purchasing.',keywords:['titanium frames','acetate frames','glasses material comparison'],difficulty:'medium',redditInsight:'Reddit debates durability and comfort of frame materials constantly.'}
+    ],
+    health:[
+      {title:'Digital Eye Strain in 2026: Causes & Real Fixes',angle:'Screen time at all-time high after the AI productivity boom.',keywords:['digital eye strain','screen time eyes','eye fatigue remedies'],difficulty:'low',redditInsight:'r/eyecare is packed with WFH workers asking what actually helps with eye fatigue.'},
+      {title:'Dry Eye in Albertans: New Treatments for 2026',angle:'Dry eye diagnoses rising fast in Canada\'s dry prairie climate.',keywords:['dry eye treatment edmonton','dry eye syndrome canada','optometrist edmonton'],difficulty:'medium',redditInsight:'r/optometry threads on dry eye management get massive engagement every week.'},
+      {title:'Blue Light Glasses: What 2026 Research Actually Says',angle:'Updated science is shifting the conversation in eye care.',keywords:['blue light glasses','blue light eyes','screen eye health'],difficulty:'low',redditInsight:'Ongoing r/optometry debate about whether blue light glasses are worth the money.'},
+      {title:'How Often Should Albertans Get an Eye Exam?',angle:'AHCIP confusion drives tons of search traffic in Alberta.',keywords:['eye exam frequency alberta','how often eye exam','optometrist edmonton'],difficulty:'low',redditInsight:'r/alberta regularly has people asking what AHCIP actually covers for vision.'}
+    ],
+    insurance:[
+      {title:'Maximize Your Alberta Vision Benefits Before They Expire',angle:'Benefits season anxiety is one of Reddit\'s top eye care topics.',keywords:['alberta vision benefits','optical insurance canada','eye care coverage'],difficulty:'low',redditInsight:'r/personalfinancecanada threads about using vision benefits before year-end get huge traction.'},
+      {title:'Does Alberta Health Cover Eye Exams in 2026?',angle:'AHCIP coverage confusion is consistently a top search in Alberta.',keywords:['alberta health eye exam','AHCIP vision coverage','free eye exam alberta'],difficulty:'low',redditInsight:'r/alberta has constant posts asking exactly what AHCIP covers for eye care.'},
+      {title:'Best Group Benefits Plans for Vision Care in Alberta',angle:'Employers competing on benefits makes this highly searched.',keywords:['group vision benefits alberta','employer eye care plan','work optical benefits'],difficulty:'medium',redditInsight:'r/alberta career subreddit often discusses which employers offer the best vision packages.'},
+      {title:'How to Submit an Optical Insurance Claim in Canada',angle:'Claims confusion is a universal pain point Canadians search constantly.',keywords:['optical insurance claim canada','vision benefits reimbursement','how to claim glasses'],difficulty:'low',redditInsight:'Reddit users frustrated by confusing optical claim forms fill r/personalfinancecanada.'}
+    ],
+    kids:[
+      {title:'Signs Your Child Needs Glasses: Edmonton Parent Guide 2026',angle:'Myopia in Canadian kids is increasing at an alarming rate.',keywords:['kids glasses edmonton','child needs glasses signs','myopia children alberta'],difficulty:'low',redditInsight:'r/parenting Canada threads about kids squinting at tablets are extremely common.'},
+      {title:'Screen Time and Kids\' Eyes: What Edmonton Parents Should Know',angle:'Post-pandemic screen habits are a top parental concern in 2026.',keywords:['screen time kids eyes','children digital eye strain','kids eye health canada'],difficulty:'low',redditInsight:'Massive r/canada parenting threads about iPads damaging kids\' eyesight.'},
+      {title:'Myopia Control for Kids: Options Available in Edmonton',angle:'Myopia management is one of the fastest-growing fields in optometry.',keywords:['myopia control edmonton','myopia management children','kids eye treatment'],difficulty:'medium',redditInsight:'r/optometry has detailed ongoing discussions about ortho-k and atropine for children.'},
+      {title:'When Should Kids Have Their First Eye Exam? A Canadian Guide',angle:'Parents frequently miss the recommended exam windows for children.',keywords:['first eye exam child canada','baby eye exam','kids optometrist edmonton'],difficulty:'low',redditInsight:'r/parenting regularly asks when to book a child\'s very first eye appointment.'}
+    ]
+  };
+  return f[cat] || f.health;
+}
+
+function showTopics(t) {
+  const cat = CATS[selCat];
+  const cards = t.map((topic, i) => {
+    const diff = topic.difficulty || 'medium';
+    const kws = (topic.keywords||[]).map(k=>`<span class="kw">${k}</span>`).join('');
+    return `<button class="tc" data-idx="${i}">
+      <div class="tc-top"><span class="badge b-n">#${i+1}</span><span class="badge b-${diff}">${diff}</span></div>
+      <div class="tc-title">${topic.title}</div>
+      <div class="tc-angle">${topic.angle}</div>
+      <div class="tc-reddit"><div class="rl">💬 Reddit</div><div class="rt">${topic.redditInsight}</div></div>
+      <div class="tc-kws">${kws}</div>
+    </button>`;
+  }).join('');
+
+  document.getElementById('mainPanel').innerHTML = `
+    <div class="sec-hdr">
+      <div class="sec-title">${cat.icon} ${cat.label} — Trending Topics</div>
+      <div class="sec-sub">Click any topic to generate the full blog post with charts + schema</div>
+    </div>
+    <div class="topics-grid">${cards}</div>`;
+
+  document.querySelectorAll('.tc').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.getAttribute('data-idx'));
+      generateBlog(topics[idx]);
+    });
+  });
+}
+
+async function generateBlog(topic) {
+  const cat = CATS[selCat];
+  document.getElementById('logBox').innerHTML = '';
+  document.getElementById('logSection').style.display = 'none';
+
+  showLoadingMain('Building your blog post...', ['Fetching chart data...']);
+  slog('Generating: '+topic.title);
+
+  try {
+    // Step 1: chart data
+    const dataRaw = await callClaude(
+      `Create 1 chart dataset for a blog post titled "${topic.title}" for a Canadian optical store in Edmonton AB.
+
+Use real or well-estimated statistics from Canadian sources (CAO, Stats Canada, Alberta Health, optometry research).
+
+Return ONLY raw JSON (no backticks, no markdown):
+{"charts":[{"title":"descriptive chart title","data":[{"name":"Label A","value":42},{"name":"Label B","value":58},{"name":"Label C","value":35},{"name":"Label D","value":71}],"unit":"%","source":"Canadian Association of Optometrists, 2025","insight":"One sentence summarizing what this data shows"}]}`
+    );
+
+    addMainLog('Chart data ready', 'ok');
+    slog('Chart data fetched','ok');
+
+    let charts = [];
+    try { charts = parseJSON(dataRaw).charts || []; }
+    catch(e) { console.warn('Chart parse failed:', e); slog('Chart fallback used','warn'); }
+
+    addMainLog('Writing article with Edmonton context...');
+    slog('Writing article...');
+
+    // Step 2: write the post
+    const blogRaw = await callClaude(
+      `Write a complete SEO blog post for Charm Optical (charmoptical.ca), 5035 Ellerslie Rd SW, Edmonton AB Canada.
+
+Title: "${topic.title}"
+Target keywords: ${(topic.keywords||[]).join(', ')}
+Reddit angle to address: ${topic.redditInsight}
+Category: ${cat.label}
+
+Writing rules:
+- 800-900 words of genuinely helpful content for regular Canadians
+- Use H2 and H3 headings throughout
+- Conversational but authoritative tone
+- Natural Edmonton/Alberta local references
+- Include [CHART_1] once where it fits best
+- Link to ${cat.link} once naturally in the body
+- End with CTA: book at Charm Optical, 5035 Ellerslie Rd SW, Edmonton
+- Byline: Navid H., Licensed Optician, Edmonton AB
+- 4-item FAQ section targeting Google's People Also Ask
+
+Return ONLY raw JSON (no backticks, no markdown):
+{"metaTitle":"under 60 chars","metaDescription":"under 155 chars, include Edmonton","slug":"url-slug","h1":"H1 heading","intro":"2-sentence hook","body":"HTML using h2 h3 p ul li tags, with [CHART_1] placed once","faq":[{"q":"question","a":"answer 2-3 sentences"}],"wordCount":850}`
+    );
+
+    addMainLog('Article complete!', 'ok');
+    slog('Article written','ok');
+
+    let blog;
+    try {
+      blog = parseJSON(blogRaw);
+    } catch(e) {
+      console.warn('Blog parse failed:', e, blogRaw.slice(0,300));
+      blog = {
+        metaTitle: topic.title.slice(0,60),
+        metaDescription: topic.angle.slice(0,155),
+        slug: topic.title.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''),
+        h1: topic.title, intro: topic.angle,
+        body: '<p>'+blogRaw.replace(/<[^>]*>/g,'').slice(0,800)+'</p>',
+        faq: [], wordCount: 800
+      };
+    }
+
+    blogData = {...blog, charts, topic, catId: selCat};
+
+    // Stats sidebar
+    document.getElementById('statsBox').innerHTML = [
+      ['Words', blog.wordCount||850],
+      ['Charts', charts.length],
+      ['FAQs', (blog.faq||[]).length],
+      ['Slug', '/'+(blog.slug||'').slice(0,16)+((blog.slug||'').length>16?'…':'')]
+    ].map(([k,v])=>`<div class="stat-row"><span class="stat-k">${k}</span><span class="stat-v">${v}</span></div>`).join('');
+    document.getElementById('statsSection').style.display = 'block';
+
+    document.getElementById('hdrBadge').textContent = '✓ Blog Ready';
+    document.getElementById('hdrBadge').style.display = 'block';
+    document.getElementById('resBtn').disabled = false;
+    document.getElementById('resBtn').textContent = '🔬 Research Again';
+    slog('Done — all tabs ready','ok');
+
+    activeTab = 'preview';
+    renderBlog();
+
+  } catch(err) {
+    console.error('[Generate error]', err);
+    slog('Error: '+err.message, 'err');
+    document.getElementById('resBtn').disabled = false;
+    document.getElementById('resBtn').textContent = '🔬 Research Again';
+    showError('Generation Failed', err.message, () => generateBlog(topic));
+  }
+}
+
+function renderChart(c) {
+  if (!c||!c.data||!c.data.length) return '';
+  const max = Math.max(...c.data.map(d=>d.value));
+  return `<div class="chart-block">
+    <div class="chart-title">${c.title}</div>
+    <div class="chart-bars">${c.data.map((d,i)=>{
+      const pct = Math.round((d.value/max)*100);
+      return `<div class="cbar-row"><div class="cbar-lbl">${d.name}</div><div class="cbar-track"><div class="cbar-fill" style="width:${pct}%;background:${COLORS[i%COLORS.length]}"><span class="cbar-val">${d.value}${c.unit||''}</span></div></div></div>`;
+    }).join('')}</div>
+    <div class="chart-src">📊 ${c.source||''} · ${c.insight||''}</div>
+  </div>`;
+}
+
+function renderBody(body, charts) {
+  if (!body) return '';
+  return body.split(/\[CHART_\d+\]/g).map((p,i)=>p+(charts&&charts[i]?renderChart(charts[i]):'')).join('');
+}
+
+function setTab(tab) { activeTab = tab; renderBlog(); }
+
+function renderBlog() {
+  const b = blogData;
+  if (!b) return;
+
+  const tabs = ['preview','meta','faq','schema'].map(t=>
+    `<button class="btab${activeTab===t?' active':''}" data-tab="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`
+  ).join('');
+
+  let content = '';
+
+  if (activeTab === 'preview') {
+    const faqHtml = (b.faq||[]).length ? `<div class="faq-block"><div class="faq-h">Frequently Asked Questions</div>${(b.faq||[]).map(f=>`<div class="faq-item"><div class="faq-q">Q: ${f.q}</div><div class="faq-a">${f.a}</div></div>`).join('')}</div>` : '';
+    content = `<div class="article">
+      <div class="art-url"><div class="udot"></div>charmoptical.ca/blogs/news/${b.slug||''}</div>
+      <h1 class="art-h1">${b.h1||''}</h1>
+      <div class="byline">
+        <div class="by-av">N</div>
+        <div><div class="by-name">Navid H., Licensed Optician</div><div class="by-role">Edmonton AB · Charm Optical</div></div>
+        <div class="by-meta"><div class="by-mv">~${b.wordCount||850} words</div><div class="by-mv">${(b.charts||[]).length} chart${(b.charts||[]).length!==1?'s':''}</div></div>
+      </div>
+      ${b.intro?`<p style="font-size:14px;color:#a0b4cc;line-height:1.8;margin-bottom:15px">${b.intro}</p>`:''}
+      <div class="art-body">${renderBody(b.body,b.charts)}</div>
+      ${faqHtml}
+    </div>`;
+
+  } else if (activeTab === 'meta') {
+    content = [
+      {label:'Meta Title', val:b.metaTitle||'', limit:60, key:'mt'},
+      {label:'Meta Description', val:b.metaDescription||'', limit:155, key:'md'},
+      {label:'URL Slug', val:`/blogs/news/${b.slug||''}`, limit:null, key:'sl'}
+    ].map(f => {
+      const over = f.limit && f.val.length > f.limit;
+      return `<div class="meta-card">
+        <div class="mc-hdr">
+          <span class="mc-lbl">${f.label}</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            ${f.limit?`<span class="mlimit" style="color:${over?'var(--red)':'var(--accent)'}">${f.val.length}/${f.limit}</span>`:''}
+            <button class="copy-btn" data-copy="${encodeURIComponent(f.val)}">Copy</button>
+          </div>
+        </div>
+        <div class="mc-val">${f.val}</div>
+      </div>`;
+    }).join('');
+
+  } else if (activeTab === 'faq') {
+    const schema = {"@context":"https://schema.org","@type":"FAQPage","mainEntity":(b.faq||[]).map(f=>({"@type":"Question","name":f.q,"acceptedAnswer":{"@type":"Answer","text":f.a}}))};
+    const ss = JSON.stringify(schema, null, 2);
+    content = `<div style="font-size:12px;color:var(--muted);margin-bottom:11px;max-width:600px">Add this as a &lt;script type="application/ld+json"&gt; block in your Shopify blog template to trigger Google People Also Ask.</div>
+    <div class="schema-block">
+      <div class="schema-hdr"><span class="schema-lbl">FAQPage JSON-LD Schema</span><button class="copy-btn" data-copy="${encodeURIComponent(ss)}">Copy</button></div>
+      <div class="schema-pre">${ss.replace(/</g,'&lt;')}</div>
+    </div>`;
+
+  } else if (activeTab === 'schema') {
+    const schema = {"@context":"https://schema.org","@type":"Article","headline":b.h1||'',"description":b.metaDescription||'',"author":{"@type":"Person","name":"Navid H., Licensed Optician","worksFor":{"@type":"LocalBusiness","name":"Charm Optical","url":"https://charmoptical.ca"}},"publisher":{"@type":"LocalBusiness","name":"Charm Optical","url":"https://charmoptical.ca","address":{"@type":"PostalAddress","streetAddress":"5035 Ellerslie Rd SW","addressLocality":"Edmonton","addressRegion":"AB","addressCountry":"CA"}},"url":`https://charmoptical.ca/blogs/news/${b.slug||''}`,"datePublished":new Date().toISOString().split('T')[0]};
+    const ss = JSON.stringify(schema, null, 2);
+    content = `<div style="font-size:12px;color:var(--muted);margin-bottom:11px;max-width:600px">Paste alongside the FAQ schema. Adds E-E-A-T author signals and your full business address to every post.</div>
+    <div class="schema-block">
+      <div class="schema-hdr"><span class="schema-lbl">Article JSON-LD Schema</span><button class="copy-btn" data-copy="${encodeURIComponent(ss)}">Copy</button></div>
+      <div class="schema-pre">${ss.replace(/</g,'&lt;')}</div>
+    </div>`;
+  }
+
+  document.getElementById('mainPanel').innerHTML = `<div class="btabs">${tabs}</div><div id="tabContent">${content}</div>`;
+
+  // Wire tab buttons
+  document.querySelectorAll('.btab').forEach(btn => {
+    btn.addEventListener('click', () => setTab(btn.getAttribute('data-tab')));
+  });
+
+  // Wire copy buttons
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = decodeURIComponent(btn.getAttribute('data-copy'));
+      try { navigator.clipboard.writeText(val); } catch(e) {}
+      btn.className = 'copy-btn copied';
+      btn.textContent = '✓ Copied';
+      setTimeout(() => { btn.className = 'copy-btn'; btn.textContent = 'Copy'; }, 2000);
+    });
+  });
+}
+</script>
+</body>
+</html>
